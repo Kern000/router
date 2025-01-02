@@ -20,15 +20,26 @@ for index, key in enumerate(working):
 
 choice = int(input("choose an index:"))
 
-chosen_mac_addr = get_if_hwaddr(ifaces.dev_from_networkname(working[choice]))
-chosen_gateway_addr = get_if_addr(ifaces.dev_from_networkname(working[choice]))
-chosen_interface = ifaces.dev_from_networkname(working[choice])
-print(chosen_interface)
+chosen_mac_addr1 = get_if_hwaddr(ifaces.dev_from_networkname(working[choice]))
+chosen_gateway_addr1 = get_if_addr(ifaces.dev_from_networkname(working[choice]))
+chosen_interface1 = ifaces.dev_from_networkname(working[choice])
+print(chosen_interface1)
 
 # printing for accessibility
-print("you have chosen:", chosen_mac_addr)
-print("your gateway ip addr:", chosen_gateway_addr)
+print("you have chosen:", chosen_mac_addr1)
+print("your gateway ip addr:", chosen_gateway_addr1)
 
+
+choice2 = int(input("choose 2nd iface with an index:"))
+
+chosen_mac_addr2 = get_if_hwaddr(ifaces.dev_from_networkname(working[choice2]))
+chosen_gateway_addr2 = get_if_addr(ifaces.dev_from_networkname(working[choice2]))
+chosen_interface2 = ifaces.dev_from_networkname(working[choice2])
+print(chosen_interface2)
+
+# printing for accessibility
+print("you have chosen for 2nd iface:", chosen_mac_addr2)
+print("your gateway ip addr:", chosen_gateway_addr2)
 ###################################################
 
 parser = argparse.ArgumentParser()
@@ -157,7 +168,7 @@ def interface_1_sniffer(packet):
         if packet[IP].dst.startswith(network_2) and \
            packet[IP].src.startswith(network_1):
 
-            send_thread = threading.Thread(target=send(packet))
+            send_thread = threading.Thread(target=sendp(packet))
             send_thread.start()
             send_thread.join()
 
@@ -175,7 +186,7 @@ def interface_2_sniffer(packet):
         if packet[IP].dst.startswith(network_1) and \
            packet[IP].src.startswith(network_2):
 
-            send_thread = threading.Thread(target=send(packet))
+            send_thread = threading.Thread(target=sendp(packet))
             send_thread.start()
             send_thread.join()
 
@@ -185,12 +196,12 @@ def interface_2_sniffer(packet):
 
 def sniff_thread_interface1():
     print("sniffing 1")
-    sniff(lfilter=interface_1_sniffer, iface=chosen_interface, timeout=20)
+    sniff(lfilter=interface_1_sniffer, iface=chosen_interface1, timeout=30)
 
 
 def sniff_thread_interface2():
     print("sniffing 2")
-    sniff(lfilter=interface_2_sniffer, iface=chosen_interface, timeout=20)
+    sniff(lfilter=interface_2_sniffer, iface=chosen_interface2, timeout=30)
 
 
 def main():
