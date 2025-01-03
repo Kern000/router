@@ -3,15 +3,12 @@ import argparse
 import threading
 from functools import reduce
 
-###################################################
 
-# Choose VM8 because by default on NAT mode it is VM8 Adapter
-# VM1 for host-only networking
 working = scapy.interfaces.get_working_ifaces()
 
+#To match ethernet mac addr
 print(IFACES)
 
-#pick VM8 using MAC address
 print("\nchoose index from list of working NIC:\n")
 for index, key in enumerate(working):
     print(index, 
@@ -20,33 +17,42 @@ for index, key in enumerate(working):
 
 choice = int(input("choose an index:"))
 
-chosen_mac_addr1 = get_if_hwaddr(ifaces.dev_from_networkname(working[choice]))
-chosen_gateway_addr1 = get_if_addr(ifaces.dev_from_networkname(working[choice]))
-chosen_interface1 = ifaces.dev_from_networkname(working[choice])
+chosen_mac_addr1 = \
+    get_if_hwaddr(ifaces.dev_from_networkname(working[choice]))
+chosen_gateway_addr1 = \
+    get_if_addr(ifaces.dev_from_networkname(working[choice]))
+chosen_interface1 = \
+    ifaces.dev_from_networkname(working[choice])
 print(chosen_interface1)
-
-# printing for accessibility
 print("you have chosen:", chosen_mac_addr1)
 print("your gateway ip addr:", chosen_gateway_addr1)
 
-
 choice2 = int(input("choose 2nd iface with an index:"))
 
-chosen_mac_addr2 = get_if_hwaddr(ifaces.dev_from_networkname(working[choice2]))
-chosen_gateway_addr2 = get_if_addr(ifaces.dev_from_networkname(working[choice2]))
-chosen_interface2 = ifaces.dev_from_networkname(working[choice2])
+chosen_mac_addr2 = \
+    get_if_hwaddr(ifaces.dev_from_networkname(working[choice2]))
+chosen_gateway_addr2 = \
+    get_if_addr(ifaces.dev_from_networkname(working[choice2]))
+chosen_interface2 = \
+    ifaces.dev_from_networkname(working[choice2])
 print(chosen_interface2)
-
-# printing for accessibility
 print("you have chosen for 2nd iface:", chosen_mac_addr2)
 print("your gateway ip addr:", chosen_gateway_addr2)
-###################################################
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i1", default="192.168.1.1", help="router interface 1 default mask 255.255.255.0")
-parser.add_argument("-i1mask", default="255.255.255.0", help="subnet mask for interface 1")
-parser.add_argument("-i2", default="10.0.0.1", help="router interface 2 default mask 255.255.255.0")
-parser.add_argument("-i2mask", default="255.0.0.0", help="subnet mask for interface 2")
+parser.add_argument("-i1", 
+                    default="192.168.1.1", 
+                    help="router interface 1")
+parser.add_argument("-i1mask", 
+                    default="255.255.255.0", 
+                    help="subnet mask for interface 1")
+parser.add_argument("-i2", 
+                    default="10.0.0.1", 
+                    help="router interface 2")
+parser.add_argument("-i2mask", 
+                    default="255.0.0.0", 
+                    help="subnet mask for interface 2")
 args = parser.parse_args()
 
 network_1 = "192.168.1."
@@ -69,6 +75,7 @@ def validate_interface_address(args):
         print("invalid interface address")
         return False
 
+
 def validate_mask_address(args):
     """ 
     validating mask address based on bit values
@@ -88,24 +95,37 @@ def validate_mask_address(args):
         cumulative_bits.append(255)
 
         for i in range(len(discrete_bits)):
-            sum = reduce(lambda acc, a: acc+a, discrete_bits[0:i+1])
+            sum = reduce(lambda acc, a: acc+a, 
+                            discrete_bits[0:i+1])
             cumulative_bits.append(255-sum)
 
         for i in range(len(octets)):
+            
             if int(octets[i]) not in cumulative_bits:
+                
                 raise ValueError()
-            if int(octets[i]) != 255 and int(octets[i]) != 0 and i != 0:
+            
+            if int(octets[i]) != 255 \
+               and int(octets[i]) != 0 \
+               and i != 0:
+                
                 if int(octets[i-1]) != 255:
                     raise ValueError()
+        
         return True
+    
     except:
+    
         print("invalid mask")
         return False
 
+
 def network_portion(ipaddr, netmask):
     """deriving network portion of decimal ip addr"""
+
     octets = ipaddr.split(".")
     holder = []
+
     for octet in octets:
         binary = (bin(int(octet)))
         string = str(binary).lstrip("0b").zfill(8)
@@ -113,7 +133,9 @@ def network_portion(ipaddr, netmask):
     router_ip_addr_bin = ''.join(holder)
 
     netmask_octets = netmask.split(".")
+
     mask_holder = []
+
     for octet in netmask_octets:
         binary = (bin(int(octet)))
         string = str(binary).lstrip("0b").zfill(8)
@@ -149,16 +171,23 @@ def network_portion(ipaddr, netmask):
 
 
 try:
-    if validate_interface_address(args.i1) and validate_mask_address(args.i1mask):
+    if validate_interface_address(args.i1) \
+        and validate_mask_address(args.i1mask):
+        
         network_1 = network_portion(args.i1, args.i1mask)
 
-    if validate_interface_address(args.i2) and validate_mask_address(args.i2mask):
+    if validate_interface_address(args.i2) \
+        and validate_mask_address(args.i2mask):
         network_2 = network_portion(args.i2, args.i2mask)
 except:
     print("invalid ip addr")
 
 
 def interface_1_sniffer(packet):
+    """
+    router interface 1 filter
+    based on src and dst
+    """
 
     global network_1
     global network_2
@@ -177,6 +206,10 @@ def interface_1_sniffer(packet):
 
 
 def interface_2_sniffer(packet):
+    """
+    router interface 2 filter
+    based on src and dst
+    """
 
     global network_1
     global network_2
@@ -195,11 +228,15 @@ def interface_2_sniffer(packet):
 
 
 def sniff_thread_interface1():
+    """threading sniffing based on NIC choice"""
+
     print("sniffing 1")
     sniff(lfilter=interface_1_sniffer, iface=chosen_interface1, timeout=30)
 
 
 def sniff_thread_interface2():
+    """threading sniffing based on NIC choice"""
+    
     print("sniffing 2")
     sniff(lfilter=interface_2_sniffer, iface=chosen_interface2, timeout=30)
 
@@ -211,7 +248,6 @@ def main():
     sniff_thread2.start()
     sniff_thread1.join()
     sniff_thread2.join()
-
 
 if __name__ == "__main__":
     main()
